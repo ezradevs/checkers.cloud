@@ -3,18 +3,18 @@ import type { BoardPosition, PieceType, Move, AnalysisResult } from '@shared/sch
 export function getInitialPosition(): BoardPosition {
   const position: BoardPosition = {};
   
-  // Black pieces (top 3 rows)
+  // Black pieces (top 3 rows) - only on dark squares
   const blackSquares = [
-    'b8', 'd8', 'f8', 'h8',
-    'a7', 'c7', 'e7', 'g7',
-    'b6', 'd6', 'f6', 'h6'
+    'a8', 'c8', 'e8', 'g8',
+    'b7', 'd7', 'f7', 'h7',
+    'a6', 'c6', 'e6', 'g6'
   ];
   
-  // Red pieces (bottom 3 rows)
+  // Red pieces (bottom 3 rows) - only on dark squares
   const redSquares = [
-    'a3', 'c3', 'e3', 'g3',
-    'b2', 'd2', 'f2', 'h2',
-    'a1', 'c1', 'e1', 'g1'
+    'b3', 'd3', 'f3', 'h3',
+    'a2', 'c2', 'e2', 'g2',
+    'b1', 'd1', 'f1', 'h1'
   ];
   
   blackSquares.forEach(square => {
