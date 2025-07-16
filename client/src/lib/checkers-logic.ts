@@ -2,29 +2,29 @@ import type { BoardPosition, PieceType, Move, AnalysisResult } from '@shared/sch
 
 export function getInitialPosition(): BoardPosition {
   const position: BoardPosition = {};
-  
-  // Black pieces (top 3 rows) - only on dark squares
+
+  // Black pieces (top 3 rows) - only on dark squares (flipped pattern)
   const blackSquares = [
-    'a8', 'c8', 'e8', 'g8',
-    'b7', 'd7', 'f7', 'h7',
-    'a6', 'c6', 'e6', 'g6'
+    'b8', 'd8', 'f8', 'h8',
+    'a7', 'c7', 'e7', 'g7',
+    'b6', 'd6', 'f6', 'h6'
   ];
-  
-  // Red pieces (bottom 3 rows) - only on dark squares
+
+  // Red pieces (bottom 3 rows) - only on dark squares (flipped pattern)
   const redSquares = [
-    'b3', 'd3', 'f3', 'h3',
-    'a2', 'c2', 'e2', 'g2',
-    'b1', 'd1', 'f1', 'h1'
+    'a1', 'c1', 'e1', 'g1',
+    'b2', 'd2', 'f2', 'h2',
+    'a3', 'c3', 'e3', 'g3'
   ];
-  
+
   blackSquares.forEach(square => {
     position[square] = 'black';
   });
-  
+
   redSquares.forEach(square => {
     position[square] = 'red';
   });
-  
+
   return position;
 }
 
@@ -54,27 +54,27 @@ export function isDarkSquare(square: string, inverted: boolean = false): boolean
 }
 
 export function getLegalMoves(
-  position: BoardPosition, 
-  player: 'red' | 'black', 
+  position: BoardPosition,
+  player: 'red' | 'black',
   rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
 ): Move[] {
   const moves: Move[] = [];
-  
+
   Object.entries(position).forEach(([square, piece]) => {
     if (!piece) return;
-    
+
     const isPlayerPiece = (player === 'red' && (piece === 'red' || piece === 'red-king')) ||
-                         (player === 'black' && (piece === 'black' || piece === 'black-king'));
-    
+      (player === 'black' && (piece === 'black' || piece === 'black-king'));
+
     if (!isPlayerPiece) return;
-    
+
     const pieceMoves = getPieceMovesAndCaptures(position, square, piece);
     moves.push(...pieceMoves);
   });
-  
+
   // Check if there are any capture moves available
   const captureMoves = moves.filter(move => move.captures && move.captures.length > 0);
-  
+
   // Apply force-take rule if enabled
   if (rules.forceTake && captureMoves.length > 0) {
     if (rules.forceMultipleTakes) {
@@ -84,79 +84,79 @@ export function getLegalMoves(
     }
     return captureMoves;
   }
-  
+
   return moves;
 }
 
 function getPieceMovesAndCaptures(position: BoardPosition, square: string, piece: PieceType): Move[] {
   if (!piece) return [];
-  
+
   const [row, col] = getSquareCoordinates(square);
   const moves: Move[] = [];
   const isKing = piece.includes('king');
   const isRed = piece.includes('red');
-  
+
   // Direction multipliers for movement
   const directions = isKing ? [-1, 1] : [isRed ? 1 : -1];
-  
+
   directions.forEach(rowDir => {
     [-1, 1].forEach(colDir => {
       // Check for simple moves
       const newRow = row + rowDir;
       const newCol = col + colDir;
       const newSquare = getSquareFromCoordinates(newRow, newCol);
-      
+
       if (isValidSquare(newSquare) && isDarkSquare(newSquare) && !position[newSquare]) {
         const promotion = shouldPromote(piece, newSquare);
         moves.push({ from: square, to: newSquare, promotion });
       }
-      
+
       // Check for captures
       const captureRow = row + rowDir * 2;
       const captureCol = col + colDir * 2;
       const captureSquare = getSquareFromCoordinates(captureRow, captureCol);
       const jumpedSquare = getSquareFromCoordinates(row + rowDir, col + colDir);
-      
-      if (isValidSquare(captureSquare) && isDarkSquare(captureSquare) && 
-          !position[captureSquare] && position[jumpedSquare] && 
-          isOpponentPiece(piece, position[jumpedSquare])) {
-        
+
+      if (isValidSquare(captureSquare) && isDarkSquare(captureSquare) &&
+        !position[captureSquare] && position[jumpedSquare] &&
+        isOpponentPiece(piece, position[jumpedSquare])) {
+
         const promotion = shouldPromote(piece, captureSquare);
-        const move: Move = { 
-          from: square, 
-          to: captureSquare, 
+        const move: Move = {
+          from: square,
+          to: captureSquare,
           captures: [jumpedSquare],
-          promotion 
+          promotion
         };
-        
+
         // Check for multiple jumps
         const multiJumpMoves = findMultipleJumps(position, move, piece);
         moves.push(...multiJumpMoves);
       }
     });
   });
-  
+
   return moves;
 }
 
 function findMultipleJumps(position: BoardPosition, initialMove: Move, piece: PieceType): Move[] {
   const tempPosition = { ...position };
-  
+
   // Apply the initial move
   tempPosition[initialMove.to] = piece;
   delete tempPosition[initialMove.from];
   if (initialMove.captures) {
     initialMove.captures.forEach(square => delete tempPosition[square]);
   }
-  
+
   // Look for additional jumps from the new position
   const additionalJumps = getPieceMovesAndCaptures(tempPosition, initialMove.to, piece)
     .filter(move => move.captures && move.captures.length > 0);
-  
+
   if (additionalJumps.length === 0) {
     return [initialMove];
   }
-  
+
   // Recursively find all possible multi-jump sequences
   const allMultiJumps: Move[] = [];
   additionalJumps.forEach(jump => {
@@ -166,11 +166,11 @@ function findMultipleJumps(position: BoardPosition, initialMove: Move, piece: Pi
       captures: [...(initialMove.captures || []), ...(jump.captures || [])],
       promotion: jump.promotion || initialMove.promotion
     };
-    
-    const furtherJumps = findMultipleJumps(tempPosition, 
-      { from: initialMove.to, to: jump.to, captures: jump.captures, promotion: jump.promotion }, 
+
+    const furtherJumps = findMultipleJumps(tempPosition,
+      { from: initialMove.to, to: jump.to, captures: jump.captures, promotion: jump.promotion },
       piece);
-    
+
     furtherJumps.forEach(furtherJump => {
       allMultiJumps.push({
         from: initialMove.from,
@@ -180,7 +180,7 @@ function findMultipleJumps(position: BoardPosition, initialMove: Move, piece: Pi
       });
     });
   });
-  
+
   return allMultiJumps.length > 0 ? allMultiJumps : [initialMove];
 }
 
@@ -199,44 +199,44 @@ function shouldPromote(piece: PieceType, toSquare: string): boolean {
 
 export function evaluatePosition(position: BoardPosition): number {
   let score = 0;
-  
+
   Object.values(position).forEach(piece => {
     if (!piece) return;
-    
+
     if (piece === 'red') score += 1;
     else if (piece === 'red-king') score += 2;
     else if (piece === 'black') score -= 1;
     else if (piece === 'black-king') score -= 2;
   });
-  
+
   return score;
 }
 
 export function analyzePosition(
-  position: BoardPosition, 
+  position: BoardPosition,
   currentPlayer: 'red' | 'black',
   rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
 ): AnalysisResult {
   const evaluation = evaluatePosition(position);
   const legalMoves = getLegalMoves(position, currentPlayer, rules);
-  
+
   let bestMove: Move | null = null;
   let bestScore = currentPlayer === 'red' ? -Infinity : Infinity;
-  
+
   // Simple 1-ply analysis
   legalMoves.forEach(move => {
     const tempPosition = makeMove(position, move);
     const score = evaluatePosition(tempPosition);
-    
-    if ((currentPlayer === 'red' && score > bestScore) || 
-        (currentPlayer === 'black' && score < bestScore)) {
+
+    if ((currentPlayer === 'red' && score > bestScore) ||
+      (currentPlayer === 'black' && score < bestScore)) {
       bestScore = score;
       bestMove = move;
     }
   });
-  
+
   const explanation = getBestMoveExplanation(bestMove, evaluation, bestScore);
-  
+
   return {
     evaluation,
     bestMove,
@@ -248,15 +248,15 @@ export function analyzePosition(
 function makeMove(position: BoardPosition, move: Move): BoardPosition {
   const newPosition = { ...position };
   const piece = newPosition[move.from];
-  
-  newPosition[move.to] = move.promotion ? 
+
+  newPosition[move.to] = move.promotion ?
     (piece?.includes('red') ? 'red-king' : 'black-king') : piece;
   delete newPosition[move.from];
-  
+
   if (move.captures) {
     move.captures.forEach(square => delete newPosition[square]);
   }
-  
+
   return newPosition;
 }
 
@@ -264,32 +264,32 @@ function getBestMoveExplanation(bestMove: Move | null, currentEval: number, newE
   if (!bestMove) {
     return "No legal moves available.";
   }
-  
+
   if (bestMove.captures && bestMove.captures.length > 0) {
     return `This move captures ${bestMove.captures.length} opponent piece(s), improving your position significantly.`;
   }
-  
+
   if (bestMove.promotion) {
     return "This move promotes your piece to a king, giving it much greater mobility and power.";
   }
-  
+
   const improvement = Math.abs(newEval - currentEval);
   if (improvement > 1) {
     return "This move significantly improves your position by advancing toward the center and creating threats.";
   }
-  
+
   return "This move maintains good position control and prepares for future tactical opportunities.";
 }
 
 export function countPieces(position: BoardPosition): { red: number; redKings: number; black: number; blackKings: number } {
   const counts = { red: 0, redKings: 0, black: 0, blackKings: 0 };
-  
+
   Object.values(position).forEach(piece => {
     if (piece === 'red') counts.red++;
     else if (piece === 'red-king') counts.redKings++;
     else if (piece === 'black') counts.black++;
     else if (piece === 'black-king') counts.blackKings++;
   });
-  
+
   return counts;
 }
