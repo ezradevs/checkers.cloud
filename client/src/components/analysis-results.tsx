@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { AnalysisResult, GameState } from '@shared/schema';
 
@@ -6,32 +7,53 @@ interface AnalysisResultsProps {
   analysisResult: AnalysisResult | null;
   lastAnalysisTime: string;
   gameState: GameState;
+  isAnalyzing: boolean;
+  analysisProgress?: number;
 }
 
 export function AnalysisResults({ 
   analysisResult, 
   lastAnalysisTime, 
-  gameState 
+  gameState,
+  isAnalyzing,
+  analysisProgress = 0
 }: AnalysisResultsProps) {
   const getEvaluationText = (evaluation: number) => {
-    if (evaluation > 3) return "Red has a strong advantage";
-    if (evaluation > 1) return "Red is slightly ahead";
-    if (evaluation > -1) return "Position is roughly equal";
-    if (evaluation > -3) return "Black is slightly ahead";
-    return "Black has a strong advantage";
+    if (evaluation > 500) return "Red has a decisive advantage";
+    if (evaluation > 200) return "Red has a strong advantage";
+    if (evaluation > 100) return "Red is clearly better";
+    if (evaluation > 50) return "Red is slightly ahead";
+    if (evaluation > -50) return "Position is roughly equal";
+    if (evaluation > -100) return "Black is slightly ahead";
+    if (evaluation > -200) return "Black is clearly better";
+    if (evaluation > -500) return "Black has a strong advantage";
+    return "Black has a decisive advantage";
   };
 
   const getEvaluationColor = (evaluation: number) => {
-    if (Math.abs(evaluation) <= 1) return "text-gray-600";
-    return evaluation > 0 ? "text-green-600" : "text-red-600";
+    if (Math.abs(evaluation) <= 50) return "text-gray-600";
+    if (Math.abs(evaluation) <= 200) return evaluation > 0 ? "text-green-600" : "text-red-600";
+    return evaluation > 0 ? "text-green-700" : "text-red-700";
   };
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Position Analysis</h2>
-        <div className="text-sm text-gray-500">Last analyzed: {lastAnalysisTime}</div>
+        <div className="text-sm text-gray-500">
+          {isAnalyzing ? "Analyzing..." : `Last analyzed: ${lastAnalysisTime}`}
+        </div>
       </div>
+      
+      {isAnalyzing && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span>Computing best moves...</span>
+            <span>{Math.round(analysisProgress)}%</span>
+          </div>
+          <Progress value={analysisProgress} className="w-full" />
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Position Evaluation */}
@@ -44,7 +66,7 @@ export function AnalysisResults({
             {getEvaluationText(gameState.evaluation)}
           </div>
           <div className="mt-2 text-xs text-gray-500">
-            Score calculation based on piece values
+            Advanced evaluation including material, position, and mobility
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { CheckersBoard } from '@/components/checkers-board';
 import { ControlPanel } from '@/components/control-panel';
 import { AnalysisResults } from '@/components/analysis-results';
 import { getInitialPosition, analyzePosition, getLegalMoves } from '@/lib/checkers-logic';
+import { findBestMoveWithDepth } from '@/lib/checkers-ai';
 import type { GameState, Move, AnalysisResult } from '@shared/schema';
 
 export default function CheckersPage() {
@@ -20,6 +21,7 @@ export default function CheckersPage() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [lastAnalysisTime, setLastAnalysisTime] = useState<string>('Never');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisDepth, setAnalysisDepth] = useState(4);
 
   const handleSquareClick = useCallback((square: string) => {
     if (gameState.mode === 'setup') {
@@ -79,7 +81,8 @@ export default function CheckersPage() {
   const handleAnalyze = useCallback(async () => {
     setIsAnalyzing(true);
     try {
-      const result = analyzePosition(gameState.position, gameState.currentPlayer);
+      // Use the enhanced AI for deeper analysis
+      const result = findBestMoveWithDepth(gameState.position, gameState.currentPlayer, analysisDepth);
       setAnalysisResult(result);
       setGameState(prev => ({
         ...prev,
@@ -90,10 +93,20 @@ export default function CheckersPage() {
       setLastAnalysisTime(new Date().toLocaleTimeString());
     } catch (error) {
       console.error('Analysis failed:', error);
+      // Fallback to basic analysis if advanced analysis fails
+      const fallbackResult = analyzePosition(gameState.position, gameState.currentPlayer);
+      setAnalysisResult(fallbackResult);
+      setGameState(prev => ({
+        ...prev,
+        evaluation: fallbackResult.evaluation,
+        bestMove: fallbackResult.bestMove ? `${fallbackResult.bestMove.from} → ${fallbackResult.bestMove.to}` : null,
+        legalMoves: fallbackResult.legalMoves,
+      }));
+      setLastAnalysisTime(new Date().toLocaleTimeString() + ' (basic)');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [gameState.position, gameState.currentPlayer]);
+  }, [gameState.position, gameState.currentPlayer, analysisDepth]);
 
   const handleReset = useCallback(() => {
     const resetPosition = getInitialPosition();
@@ -140,6 +153,10 @@ export default function CheckersPage() {
     });
   }, []);
 
+  const handleDepthChange = useCallback((depth: number) => {
+    setAnalysisDepth(depth);
+  }, []);
+
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       {/* Header */}
@@ -167,11 +184,13 @@ export default function CheckersPage() {
           <ControlPanel
             gameState={gameState}
             isAnalyzing={isAnalyzing}
+            analysisDepth={analysisDepth}
             onAnalyze={handleAnalyze}
             onReset={handleReset}
             onClear={handleClear}
             onFlip={handleFlip}
             onModeChange={handleModeChange}
+            onDepthChange={handleDepthChange}
           />
         </div>
       </div>
@@ -182,6 +201,7 @@ export default function CheckersPage() {
           analysisResult={analysisResult}
           lastAnalysisTime={lastAnalysisTime}
           gameState={gameState}
+          isAnalyzing={isAnalyzing}
         />
       </div>
 

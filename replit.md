@@ -35,14 +35,16 @@ Preferred communication style: Simple, everyday language.
 
 ### Game Engine
 - **Board Representation**: JSON-based board position storage
-- **Move Generation**: Legal move calculation and validation
-- **Game Logic**: Checkers rules implementation including captures and king promotion
-- **AI Analysis**: Minimax algorithm for position evaluation
+- **Move Generation**: Legal move calculation and validation with proper dark square placement
+- **Game Logic**: Checkers rules implementation including captures, king promotion, and multi-jumps
+- **AI Analysis**: Enhanced minimax algorithm with alpha-beta pruning (depth 2-5)
+- **Position Evaluation**: Advanced evaluation including material, positional, mobility, and strategic factors
+- **Engine Strength**: Configurable analysis depth from beginner to expert level
 
 ### UI Components
-- **CheckersBoard**: Interactive game board with drag-and-drop functionality
-- **ControlPanel**: Game mode switching and analysis controls
-- **AnalysisResults**: Position evaluation display
+- **CheckersBoard**: Interactive game board with drag-and-drop functionality and move highlighting
+- **ControlPanel**: Game mode switching, analysis controls, and configurable engine depth
+- **AnalysisResults**: Comprehensive position evaluation display with progress tracking
 
 ### Data Models
 - **Game Schema**: Stores position, current player, game mode, and analysis results
@@ -90,3 +92,16 @@ Preferred communication style: Simple, everyday language.
 3. **Component Architecture**: Modular UI components with clear separation of concerns
 4. **Type Safety**: End-to-end TypeScript with strict configuration
 5. **Modern Stack**: Latest versions of React, Express, and supporting libraries
+
+## Recent Changes: Latest modifications with dates
+
+### January 16, 2025 - Enhanced Engine Implementation
+- **Fixed Critical Bug**: Corrected piece placement to use only dark squares (was causing moves to fail)
+- **Advanced AI Engine**: Implemented minimax with alpha-beta pruning for stronger gameplay
+- **Sophisticated Evaluation**: Added multi-factor position evaluation including:
+  - Material values (pieces: 100pts, kings: 300pts)
+  - Positional bonuses (advancement, center control, back rank protection)
+  - Mobility assessment and strategic factors
+- **Configurable Difficulty**: Added depth selection from beginner (depth 2) to expert (depth 5)
+- **Enhanced UI**: Improved analysis display with better evaluation ranges and progress tracking
+- **Performance Optimization**: Move ordering and pruning for faster analysis

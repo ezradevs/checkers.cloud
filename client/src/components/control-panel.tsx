@@ -1,28 +1,33 @@
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, BarChart3, RotateCcw, Eraser, RotateCw } from 'lucide-react';
+import { Loader2, BarChart3, RotateCcw, Eraser, RotateCw, Settings } from 'lucide-react';
 import type { GameState } from '@shared/schema';
 import { countPieces } from '@/lib/checkers-logic';
 
 interface ControlPanelProps {
   gameState: GameState;
   isAnalyzing: boolean;
+  analysisDepth: number;
   onAnalyze: () => void;
   onReset: () => void;
   onClear: () => void;
   onFlip: () => void;
   onModeChange: (mode: 'setup' | 'play') => void;
+  onDepthChange: (depth: number) => void;
 }
 
 export function ControlPanel({
   gameState,
   isAnalyzing,
+  analysisDepth,
   onAnalyze,
   onReset,
   onClear,
   onFlip,
-  onModeChange
+  onModeChange,
+  onDepthChange
 }: ControlPanelProps) {
   const pieceCounts = countPieces(gameState.position);
 
@@ -106,6 +111,35 @@ export function ControlPanel({
             </Label>
           </div>
         </RadioGroup>
+      </div>
+
+      {/* Analysis Settings */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Settings className="mr-2 h-5 w-5" />
+          Analysis Settings
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="depth-select" className="text-sm font-medium text-gray-700 mb-2 block">
+              Search Depth (Engine Strength)
+            </Label>
+            <Select value={analysisDepth?.toString() || "4"} onValueChange={(value) => onDepthChange(parseInt(value))}>
+              <SelectTrigger id="depth-select">
+                <SelectValue placeholder="Select depth" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">Beginner (Depth 2) - Fast</SelectItem>
+                <SelectItem value="3">Intermediate (Depth 3) - Balanced</SelectItem>
+                <SelectItem value="4">Advanced (Depth 4) - Strong</SelectItem>
+                <SelectItem value="5">Expert (Depth 5) - Strongest</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="text-xs text-gray-500 mt-1">
+              Higher depth = stronger play but slower analysis
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Piece Count */}
