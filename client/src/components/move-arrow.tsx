@@ -33,12 +33,12 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const arrowHeadWidth = squareSize * 0.1;
     const arrowBodyWidth = squareSize * 0.06;
     
-    // Adjust start and end points to not overlap pieces
-    const pieceRadius = squareSize * 0.3;
+    // Adjust start point to edge of piece circle, end point to center of destination square
+    const pieceRadius = squareSize * 0.35; // Edge of piece
     const adjustedFromX = fromX + (pieceRadius * Math.cos(angle));
     const adjustedFromY = fromY + (pieceRadius * Math.sin(angle));
-    const adjustedToX = toX - (pieceRadius * Math.cos(angle));
-    const adjustedToY = toY - (pieceRadius * Math.sin(angle));
+    const adjustedToX = toX; // Go to center of destination square
+    const adjustedToY = toY;
     
     // Calculate arrow head points
     const headX1 = adjustedToX - arrowHeadLength * Math.cos(angle - Math.PI / 6);

@@ -168,8 +168,7 @@ export function CheckersBoard({
                   className={cn(
                     "w-12 h-12 md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:bg-opacity-80 transition-colors relative",
                     isDark ? "bg-gray-400" : "bg-gray-100",
-                    highlighted,
-                    selectedSquare === square && "bg-blue-200"
+                    highlighted
                   )}
                   onClick={() => handleSquareClick(square)}
                   onDragOver={handleDragOver}
@@ -180,7 +179,7 @@ export function CheckersBoard({
                   {/* Legal move indicator */}
                   {isLegalMoveDestination(square) && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full opacity-60 shadow-sm" />
+                      <div className="w-3 h-3 md:w-4 md:h-4 bg-black rounded-full opacity-40" />
                     </div>
                   )}
                 </div>
