@@ -22,7 +22,7 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const toX = (toCol + 0.5) * squareSize;
     const toY = (7 - toRow + 0.5) * squareSize;
     
-    // Calculate arrow properties
+    // Calculate exact angle and distance
     const deltaX = toX - fromX;
     const deltaY = toY - fromY;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -30,13 +30,12 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     
     // Arrow dimensions - smaller and more subtle
     const arrowHeadLength = squareSize * 0.15;
-    const arrowHeadWidth = squareSize * 0.1;
     const arrowBodyWidth = squareSize * 0.06;
     
-    // Start from edge of piece circle, end at center of destination square
-    const pieceRadius = squareSize * 0.25; // Actual piece radius (half of piece size)
-    const adjustedFromX = fromX + (pieceRadius * Math.cos(angle));
-    const adjustedFromY = fromY + (pieceRadius * Math.sin(angle));
+    // Calculate precise positioning: start from actual edge of piece, end at exact center
+    const pieceRadiusPixels = (squareSize * 0.75) / 2; // Piece is 75% of square size, so radius is 37.5%
+    const adjustedFromX = fromX + (pieceRadiusPixels * Math.cos(angle));
+    const adjustedFromY = fromY + (pieceRadiusPixels * Math.sin(angle));
     const adjustedToX = toX; // Exact center of destination square
     const adjustedToY = toY;
     

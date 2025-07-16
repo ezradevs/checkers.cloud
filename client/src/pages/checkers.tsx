@@ -210,10 +210,6 @@ export default function CheckersPage() {
             hoveredMove={hoveredMove}
           />
           
-          {/* Evaluation Bar - directly under board */}
-          <div className="mt-6">
-            <EvaluationBar evaluation={gameState.evaluation} />
-          </div>
         </div>
 
         {/* Control Panel Section */}
@@ -231,29 +227,34 @@ export default function CheckersPage() {
             onRulesChange={handleRulesChange}
           />
         </div>
-
-
       </div>
 
-      {/* Analysis Results - underneath everything */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Position Analysis */}
-        <div>
-          <AnalysisResults
-            analysisResult={analysisResult}
-            lastAnalysisTime={lastAnalysisTime}
-            gameState={gameState}
-            isAnalyzing={isAnalyzing}
-          />
-        </div>
-        
-        {/* Engine Lines */}
-        <div>
-          <EngineLines
-            moveEvaluations={analysisResult?.moveEvaluations || []}
-            currentPlayer={gameState.currentPlayer}
-            onMoveHover={setHoveredMove}
-          />
+      {/* Evaluation Bar - underneath board and controls */}
+      <div className="mt-8">
+        <EvaluationBar evaluation={gameState.evaluation} />
+      </div>
+
+      {/* Analysis Results - underneath evaluation bar */}
+      <div className="mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Position Analysis */}
+          <div>
+            <AnalysisResults
+              analysisResult={analysisResult}
+              lastAnalysisTime={lastAnalysisTime}
+              gameState={gameState}
+              isAnalyzing={isAnalyzing}
+            />
+          </div>
+          
+          {/* Engine Lines */}
+          <div>
+            <EngineLines
+              moveEvaluations={analysisResult?.moveEvaluations || []}
+              currentPlayer={gameState.currentPlayer}
+              onMoveHover={setHoveredMove}
+            />
+          </div>
         </div>
       </div>
 
