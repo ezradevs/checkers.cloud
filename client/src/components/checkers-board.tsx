@@ -103,6 +103,11 @@ export function CheckersBoard({
     return '';
   }, [selectedSquare]);
 
+  const isLegalMoveDestination = useCallback((square: string) => {
+    if (!selectedSquare) return false;
+    return legalMoves.some(move => move.from === selectedSquare && move.to === square);
+  }, [selectedSquare, legalMoves]);
+
   const renderPiece = (square: string, piece: PieceType) => {
     if (!piece) return null;
 
@@ -171,6 +176,13 @@ export function CheckersBoard({
                   onDrop={(e) => handleDrop(e, square)}
                 >
                   {renderPiece(square, piece)}
+                  
+                  {/* Legal move indicator */}
+                  {isLegalMoveDestination(square) && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full opacity-60 shadow-sm" />
+                    </div>
+                  )}
                 </div>
               );
             })}

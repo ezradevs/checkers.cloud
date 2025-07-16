@@ -28,9 +28,10 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const angle = Math.atan2(deltaY, deltaX);
     
-    // Arrow head size
-    const arrowHeadSize = squareSize * 0.2;
-    const arrowBodyWidth = squareSize * 0.12;
+    // Arrow dimensions - smaller and more subtle
+    const arrowHeadLength = squareSize * 0.15;
+    const arrowHeadWidth = squareSize * 0.1;
+    const arrowBodyWidth = squareSize * 0.06;
     
     // Adjust start and end points to not overlap pieces
     const pieceRadius = squareSize * 0.3;
@@ -39,14 +40,23 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const adjustedToX = toX - (pieceRadius * Math.cos(angle));
     const adjustedToY = toY - (pieceRadius * Math.sin(angle));
     
+    // Calculate arrow head points
+    const headX1 = adjustedToX - arrowHeadLength * Math.cos(angle - Math.PI / 6);
+    const headY1 = adjustedToY - arrowHeadLength * Math.sin(angle - Math.PI / 6);
+    const headX2 = adjustedToX - arrowHeadLength * Math.cos(angle + Math.PI / 6);
+    const headY2 = adjustedToY - arrowHeadLength * Math.sin(angle + Math.PI / 6);
+
     return {
       fromX: adjustedFromX,
       fromY: adjustedFromY,
       toX: adjustedToX,
       toY: adjustedToY,
       angle,
-      arrowHeadSize,
-      arrowBodyWidth
+      arrowBodyWidth,
+      headX1,
+      headY1,
+      headX2,
+      headY2
     };
   }, [move.from, move.to, boardSize]);
 
@@ -64,22 +74,11 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     >
       <defs>
         <filter id={`shadow-${color}`} x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+          <feDropShadow dx="1" dy="1" stdDeviation="2" floodOpacity="0.2"/>
         </filter>
-        <marker
-          id={`arrowhead-${color}`}
-          markerWidth="12"
-          markerHeight="10"
-          refX="10"
-          refY="5"
-          orient="auto"
-          className={arrowColors[color]}
-        >
-          <polygon points="0 0, 12 5, 0 10" />
-        </marker>
       </defs>
       
-      {/* Arrow body with enhanced styling */}
+      {/* Arrow body - main line */}
       <line
         x1={arrow.fromX}
         y1={arrow.fromY}
@@ -87,11 +86,38 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
         y2={arrow.toY}
         strokeWidth={arrow.arrowBodyWidth}
         strokeLinecap="round"
-        markerEnd={`url(#arrowhead-${color})`}
         filter={`url(#shadow-${color})`}
         className={cn(
           arrowColors[color],
-          color === 'suggested' ? 'opacity-95' : 'opacity-85'
+          color === 'suggested' ? 'opacity-90' : 'opacity-80'
+        )}
+      />
+      
+      {/* Arrow head - two angled lines */}
+      <line
+        x1={arrow.toX}
+        y1={arrow.toY}
+        x2={arrow.headX1}
+        y2={arrow.headY1}
+        strokeWidth={arrow.arrowBodyWidth}
+        strokeLinecap="round"
+        filter={`url(#shadow-${color})`}
+        className={cn(
+          arrowColors[color],
+          color === 'suggested' ? 'opacity-90' : 'opacity-80'
+        )}
+      />
+      <line
+        x1={arrow.toX}
+        y1={arrow.toY}
+        x2={arrow.headX2}
+        y2={arrow.headY2}
+        strokeWidth={arrow.arrowBodyWidth}
+        strokeLinecap="round"
+        filter={`url(#shadow-${color})`}
+        className={cn(
+          arrowColors[color],
+          color === 'suggested' ? 'opacity-90' : 'opacity-80'
         )}
       />
       
@@ -107,8 +133,8 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
                 key={index}
                 cx={captureX}
                 cy={captureY}
-                r={arrow.arrowBodyWidth}
-                className="fill-red-500 stroke-red-700 stroke-2 opacity-80"
+                r={arrow.arrowBodyWidth * 1.5}
+                className="fill-red-500 stroke-red-700 stroke-1 opacity-70"
               />
             );
           })}
