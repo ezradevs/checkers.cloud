@@ -29,8 +29,8 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const angle = Math.atan2(deltaY, deltaX);
     
     // Arrow head size
-    const arrowHeadSize = squareSize * 0.15;
-    const arrowBodyWidth = squareSize * 0.08;
+    const arrowHeadSize = squareSize * 0.2;
+    const arrowBodyWidth = squareSize * 0.12;
     
     // Adjust start and end points to not overlap pieces
     const pieceRadius = squareSize * 0.3;
@@ -51,8 +51,8 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
   }, [move.from, move.to, boardSize]);
 
   const arrowColors = {
-    suggested: 'stroke-purple-600 fill-purple-600',
-    hovered: 'stroke-orange-500 fill-orange-500'
+    suggested: 'stroke-purple-500 fill-purple-500',
+    hovered: 'stroke-orange-400 fill-orange-400'
   };
 
   return (
@@ -63,31 +63,35 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
       style={{ zIndex: 10 }}
     >
       <defs>
+        <filter id={`shadow-${color}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="2" dy="2" stdDeviation="3" floodOpacity="0.3"/>
+        </filter>
         <marker
           id={`arrowhead-${color}`}
-          markerWidth="10"
-          markerHeight="7"
-          refX="8"
-          refY="3.5"
+          markerWidth="12"
+          markerHeight="10"
+          refX="10"
+          refY="5"
           orient="auto"
           className={arrowColors[color]}
         >
-          <polygon points="0 0, 10 3.5, 0 7" />
+          <polygon points="0 0, 12 5, 0 10" />
         </marker>
       </defs>
       
-      {/* Arrow body */}
+      {/* Arrow body with enhanced styling */}
       <line
         x1={arrow.fromX}
         y1={arrow.fromY}
         x2={arrow.toX}
         y2={arrow.toY}
         strokeWidth={arrow.arrowBodyWidth}
+        strokeLinecap="round"
         markerEnd={`url(#arrowhead-${color})`}
+        filter={`url(#shadow-${color})`}
         className={cn(
-          "drop-shadow-sm",
           arrowColors[color],
-          color === 'suggested' ? 'opacity-90' : 'opacity-75'
+          color === 'suggested' ? 'opacity-95' : 'opacity-85'
         )}
       />
       

@@ -196,9 +196,9 @@ export default function CheckersPage() {
       </div>
 
       {/* Main Game Interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Game Board Section */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <CheckersBoard
             position={gameState.position}
             currentPlayer={gameState.currentPlayer}
@@ -209,10 +209,15 @@ export default function CheckersPage() {
             suggestedMove={analysisResult?.bestMove}
             hoveredMove={hoveredMove}
           />
+          
+          {/* Evaluation Bar - directly under board */}
+          <div className="mt-6">
+            <EvaluationBar evaluation={gameState.evaluation} />
+          </div>
         </div>
 
-        {/* Control Panel */}
-        <div className="lg:col-span-1">
+        {/* Control Panel Section */}
+        <div>
           <ControlPanel
             gameState={gameState}
             isAnalyzing={isAnalyzing}
@@ -222,17 +227,18 @@ export default function CheckersPage() {
             onClear={handleClear}
             onFlip={handleFlip}
             onModeChange={handleModeChange}
-            onDepthChange={handleDepthChange}
+            onDepthChange={setAnalysisDepth}
             onRulesChange={handleRulesChange}
           />
         </div>
+
+
       </div>
 
-      {/* Analysis Dashboard */}
+      {/* Analysis Results - underneath everything */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Evaluation & Analysis */}
-        <div className="space-y-6">
-          <EvaluationBar evaluation={gameState.evaluation} />
+        {/* Position Analysis */}
+        <div>
           <AnalysisResults
             analysisResult={analysisResult}
             lastAnalysisTime={lastAnalysisTime}
@@ -241,7 +247,7 @@ export default function CheckersPage() {
           />
         </div>
         
-        {/* Right Column - Engine Lines */}
+        {/* Engine Lines */}
         <div>
           <EngineLines
             moveEvaluations={analysisResult?.moveEvaluations || []}

@@ -100,14 +100,8 @@ export function CheckersBoard({
 
   const getSquareHighlight = useCallback((square: string) => {
     if (selectedSquare === square) return 'ring-4 ring-blue-400 ring-opacity-75';
-    if (suggestedMove?.from === square) return 'ring-3 ring-purple-500 ring-opacity-75';
-    if (suggestedMove?.to === square) return 'ring-3 ring-purple-500 ring-opacity-75';
-    if (hoveredMove?.from === square) return 'ring-2 ring-orange-400 ring-opacity-60';
-    if (hoveredMove?.to === square) return 'ring-2 ring-orange-400 ring-opacity-60';
-    if (legalMoves.some(move => move.to === square)) return 'ring-2 ring-green-400 ring-opacity-50';
-    if (legalMoves.some(move => move.from === square)) return 'ring-2 ring-yellow-400 ring-opacity-50';
     return '';
-  }, [selectedSquare, suggestedMove, hoveredMove, legalMoves]);
+  }, [selectedSquare]);
 
   const renderPiece = (square: string, piece: PieceType) => {
     if (!piece) return null;
