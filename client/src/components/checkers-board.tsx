@@ -13,6 +13,7 @@ interface CheckersBoardProps {
   onPieceMove: (move: Move) => void;
   suggestedMove?: Move | null;
   hoveredMove?: Move | null;
+  moveHistory?: string[];
 }
 
 export function CheckersBoard({ 
@@ -23,7 +24,8 @@ export function CheckersBoard({
   onSquareClick, 
   onPieceMove,
   suggestedMove,
-  hoveredMove
+  hoveredMove,
+  moveHistory = []
 }: CheckersBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<{ square: string; piece: PieceType } | null>(null);
@@ -149,10 +151,13 @@ export function CheckersBoard({
         </div>
       </div>
       
-      <div 
-        ref={boardRef}
-        className="aspect-square max-w-lg mx-auto border-4 border-gray-800 rounded-lg overflow-hidden relative"
-      >
+      <div className="flex gap-6">
+        {/* Game Board */}
+        <div className="flex-1">
+          <div 
+            ref={boardRef}
+            className="aspect-square max-w-lg border-4 border-gray-800 rounded-lg overflow-hidden relative"
+          >
         {ranks.map((rank) => (
           <div key={rank} className="flex">
             {files.map((file) => {
@@ -202,12 +207,44 @@ export function CheckersBoard({
             color="hovered"
           />
         )}
-      </div>
+          </div>
 
-      <div className="flex justify-between mt-2 text-xs text-gray-500 max-w-lg mx-auto px-2">
-        {files.map(file => (
-          <span key={file}>{file}</span>
-        ))}
+          <div className="flex justify-between mt-2 text-xs text-gray-500 px-2">
+            {files.map(file => (
+              <span key={file}>{file}</span>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-start mt-2 text-xs text-gray-500 absolute left-0 top-0">
+            {ranks.map(rank => (
+              <div key={rank} className="h-12 md:h-16 flex items-center -ml-8">
+                <span>{rank}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Move History */}
+        <div className="w-48 flex-shrink-0">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Move History</h3>
+          <div className="bg-gray-50 rounded-lg p-3 h-96 overflow-y-auto">
+            {moveHistory.length === 0 ? (
+              <div className="text-gray-500 text-sm italic">No moves yet</div>
+            ) : (
+              <div className="space-y-1">
+                {moveHistory.map((move, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span className="text-gray-600">{index + 1}.</span>
+                    <span className="font-mono text-gray-900">{move}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
