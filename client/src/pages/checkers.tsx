@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { CheckersBoard } from '@/components/checkers-board';
 import { ControlPanel } from '@/components/control-panel';
 import { AnalysisResults } from '@/components/analysis-results';
@@ -16,6 +16,10 @@ export default function CheckersPage() {
     bestMove: null,
     moveHistory: [],
     legalMoves: getLegalMoves(initialPosition, 'red'),
+    rules: {
+      forceTake: true,
+      forceMultipleTakes: true,
+    },
   });
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -65,7 +69,7 @@ export default function CheckersPage() {
         const moveNotation = `${move.from}-${move.to}${move.captures ? 'x' + move.captures.join('x') : ''}`;
         
         const nextPlayer = prev.currentPlayer === 'red' ? 'black' : 'red';
-        const legalMoves = getLegalMoves(newPosition, nextPlayer);
+        const legalMoves = getLegalMoves(newPosition, nextPlayer, gameState.rules);
         
         return {
           ...prev,
@@ -81,8 +85,8 @@ export default function CheckersPage() {
   const handleAnalyze = useCallback(async () => {
     setIsAnalyzing(true);
     try {
-      // Use the enhanced AI for deeper analysis
-      const result = findBestMoveWithDepth(gameState.position, gameState.currentPlayer, analysisDepth);
+      // Use the enhanced AI for deeper analysis with current rules
+      const result = findBestMoveWithDepth(gameState.position, gameState.currentPlayer, analysisDepth, gameState.rules);
       setAnalysisResult(result);
       setGameState(prev => ({
         ...prev,
@@ -94,7 +98,7 @@ export default function CheckersPage() {
     } catch (error) {
       console.error('Analysis failed:', error);
       // Fallback to basic analysis if advanced analysis fails
-      const fallbackResult = analyzePosition(gameState.position, gameState.currentPlayer);
+      const fallbackResult = analyzePosition(gameState.position, gameState.currentPlayer, gameState.rules);
       setAnalysisResult(fallbackResult);
       setGameState(prev => ({
         ...prev,
@@ -106,7 +110,18 @@ export default function CheckersPage() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [gameState.position, gameState.currentPlayer, analysisDepth]);
+  }, [gameState.position, gameState.currentPlayer, analysisDepth, gameState.rules]);
+
+  // Auto-evaluate position when it changes (this fixes the timing issue)
+  useEffect(() => {
+    if (gameState.mode === 'play') {
+      // Delay auto-analysis slightly to allow UI to update
+      const timeoutId = setTimeout(() => {
+        handleAnalyze();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gameState.position, gameState.currentPlayer, gameState.rules]);
 
   const handleReset = useCallback(() => {
     const resetPosition = getInitialPosition();
@@ -117,7 +132,8 @@ export default function CheckersPage() {
       evaluation: 0,
       bestMove: null,
       moveHistory: [],
-      legalMoves: gameState.mode === 'play' ? getLegalMoves(resetPosition, 'red') : [],
+      legalMoves: gameState.mode === 'play' ? getLegalMoves(resetPosition, 'red', gameState.rules) : [],
+      rules: gameState.rules,
     });
     setAnalysisResult(null);
     setLastAnalysisTime('Never');
@@ -145,8 +161,8 @@ export default function CheckersPage() {
     setGameState(prev => {
       const newState = { ...prev, mode };
       if (mode === 'play') {
-        // Calculate legal moves when switching to play mode
-        const legalMoves = getLegalMoves(prev.position, prev.currentPlayer);
+        // Calculate legal moves when switching to play mode with current rules
+        const legalMoves = getLegalMoves(prev.position, prev.currentPlayer, prev.rules);
         newState.legalMoves = legalMoves;
       }
       return newState;
@@ -155,6 +171,17 @@ export default function CheckersPage() {
 
   const handleDepthChange = useCallback((depth: number) => {
     setAnalysisDepth(depth);
+  }, []);
+
+  const handleRulesChange = useCallback((rules: { forceTake: boolean; forceMultipleTakes: boolean }) => {
+    setGameState(prev => {
+      const newState = { ...prev, rules };
+      // Recalculate legal moves with new rules if in play mode
+      if (prev.mode === 'play') {
+        newState.legalMoves = getLegalMoves(prev.position, prev.currentPlayer, rules);
+      }
+      return newState;
+    });
   }, []);
 
   return (
@@ -191,6 +218,7 @@ export default function CheckersPage() {
             onFlip={handleFlip}
             onModeChange={handleModeChange}
             onDepthChange={handleDepthChange}
+            onRulesChange={handleRulesChange}
           />
         </div>
       </div>

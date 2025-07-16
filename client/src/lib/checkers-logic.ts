@@ -50,7 +50,11 @@ export function isDarkSquare(square: string): boolean {
   return (row + col) % 2 === 1;
 }
 
-export function getLegalMoves(position: BoardPosition, player: 'red' | 'black'): Move[] {
+export function getLegalMoves(
+  position: BoardPosition, 
+  player: 'red' | 'black', 
+  rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
+): Move[] {
   const moves: Move[] = [];
   
   Object.entries(position).forEach(([square, piece]) => {
@@ -65,9 +69,20 @@ export function getLegalMoves(position: BoardPosition, player: 'red' | 'black'):
     moves.push(...pieceMoves);
   });
   
-  // If captures are available, only return capture moves
+  // Check if there are any capture moves available
   const captureMoves = moves.filter(move => move.captures && move.captures.length > 0);
-  return captureMoves.length > 0 ? captureMoves : moves;
+  
+  // Apply force-take rule if enabled
+  if (rules.forceTake && captureMoves.length > 0) {
+    if (rules.forceMultipleTakes) {
+      // Find the moves with the maximum number of captures
+      const maxCaptures = Math.max(...captureMoves.map(move => move.captures?.length || 0));
+      return captureMoves.filter(move => (move.captures?.length || 0) === maxCaptures);
+    }
+    return captureMoves;
+  }
+  
+  return moves;
 }
 
 function getPieceMovesAndCaptures(position: BoardPosition, square: string, piece: PieceType): Move[] {
@@ -194,9 +209,13 @@ export function evaluatePosition(position: BoardPosition): number {
   return score;
 }
 
-export function analyzePosition(position: BoardPosition, currentPlayer: 'red' | 'black'): AnalysisResult {
+export function analyzePosition(
+  position: BoardPosition, 
+  currentPlayer: 'red' | 'black',
+  rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
+): AnalysisResult {
   const evaluation = evaluatePosition(position);
-  const legalMoves = getLegalMoves(position, currentPlayer);
+  const legalMoves = getLegalMoves(position, currentPlayer, rules);
   
   let bestMove: Move | null = null;
   let bestScore = currentPlayer === 'red' ? -Infinity : Infinity;

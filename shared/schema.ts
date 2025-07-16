@@ -44,6 +44,10 @@ export type GameState = {
   bestMove: string | null;
   moveHistory: string[];
   legalMoves: Move[];
+  rules: {
+    forceTake: boolean;
+    forceMultipleTakes: boolean;
+  };
 };
 
 export type AnalysisResult = {
@@ -51,4 +55,6 @@ export type AnalysisResult = {
   bestMove: Move | null;
   legalMoves: Move[];
   explanation: string;
+  analysisTime?: number;
+  nodesEvaluated?: number;
 };

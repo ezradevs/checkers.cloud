@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, BarChart3, RotateCcw, Eraser, RotateCw, Settings } from 'lucide-react';
+import { Loader2, BarChart3, RotateCcw, Eraser, RotateCw, Settings, Shield } from 'lucide-react';
 import type { GameState } from '@shared/schema';
 import { countPieces } from '@/lib/checkers-logic';
 
@@ -16,6 +17,7 @@ interface ControlPanelProps {
   onFlip: () => void;
   onModeChange: (mode: 'setup' | 'play') => void;
   onDepthChange: (depth: number) => void;
+  onRulesChange: (rules: { forceTake: boolean; forceMultipleTakes: boolean }) => void;
 }
 
 export function ControlPanel({
@@ -27,7 +29,8 @@ export function ControlPanel({
   onClear,
   onFlip,
   onModeChange,
-  onDepthChange
+  onDepthChange,
+  onRulesChange
 }: ControlPanelProps) {
   const pieceCounts = countPieces(gameState.position);
 
@@ -139,6 +142,53 @@ export function ControlPanel({
               Higher depth = stronger play but slower analysis
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Game Rules */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Shield className="mr-2 h-5 w-5" />
+          Game Rules
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="force-take" className="text-sm font-medium">
+                Force Take Rule
+              </Label>
+              <div className="text-xs text-gray-500">
+                Must capture when possible
+              </div>
+            </div>
+            <Switch
+              id="force-take"
+              checked={gameState.rules.forceTake}
+              onCheckedChange={(checked) =>
+                onRulesChange({ ...gameState.rules, forceTake: checked })
+              }
+            />
+          </div>
+          
+          {gameState.rules.forceTake && (
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="force-multiple" className="text-sm font-medium">
+                  Force Maximum Captures
+                </Label>
+                <div className="text-xs text-gray-500">
+                  Must take longest sequence available
+                </div>
+              </div>
+              <Switch
+                id="force-multiple"
+                checked={gameState.rules.forceMultipleTakes}
+                onCheckedChange={(checked) =>
+                  onRulesChange({ ...gameState.rules, forceMultipleTakes: checked })
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
 

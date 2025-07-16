@@ -7,13 +7,14 @@ export function minimax(
   maximizingPlayer: boolean, 
   player: 'red' | 'black',
   alpha: number = -Infinity,
-  beta: number = Infinity
+  beta: number = Infinity,
+  rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
 ): number {
   if (depth === 0) {
     return evaluatePositionAdvanced(position);
   }
   
-  const moves = getLegalMoves(position, player);
+  const moves = getLegalMoves(position, player, rules);
   
   if (moves.length === 0) {
     // No moves available - game over
@@ -24,7 +25,7 @@ export function minimax(
     let maxEval = -Infinity;
     for (const move of moves) {
       const newPosition = makeMove(position, move);
-      const evaluation = minimax(newPosition, depth - 1, false, player === 'red' ? 'black' : 'red', alpha, beta);
+      const evaluation = minimax(newPosition, depth - 1, false, player === 'red' ? 'black' : 'red', alpha, beta, rules);
       maxEval = Math.max(maxEval, evaluation);
       alpha = Math.max(alpha, evaluation);
       if (beta <= alpha) {
@@ -36,7 +37,7 @@ export function minimax(
     let minEval = Infinity;
     for (const move of moves) {
       const newPosition = makeMove(position, move);
-      const evaluation = minimax(newPosition, depth - 1, true, player === 'red' ? 'black' : 'red', alpha, beta);
+      const evaluation = minimax(newPosition, depth - 1, true, player === 'red' ? 'black' : 'red', alpha, beta, rules);
       minEval = Math.min(minEval, evaluation);
       beta = Math.min(beta, evaluation);
       if (beta <= alpha) {
@@ -163,9 +164,10 @@ function evaluatePositionAdvanced(position: BoardPosition): number {
 export function findBestMoveWithDepth(
   position: BoardPosition, 
   player: 'red' | 'black', 
-  depth: number = 4
+  depth: number = 4,
+  rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
 ): AnalysisResult {
-  const legalMoves = getLegalMoves(position, player);
+  const legalMoves = getLegalMoves(position, player, rules);
   const evaluation = evaluatePositionAdvanced(position);
   
   if (legalMoves.length === 0) {
@@ -190,7 +192,7 @@ export function findBestMoveWithDepth(
   
   sortedMoves.forEach(move => {
     const newPosition = makeMove(position, move);
-    const score = minimax(newPosition, depth - 1, player === 'black', player === 'red' ? 'black' : 'red');
+    const score = minimax(newPosition, depth - 1, player === 'black', player === 'red' ? 'black' : 'red', -Infinity, Infinity, rules);
     
     moveEvaluations.push({move, score});
     
