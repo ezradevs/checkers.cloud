@@ -197,8 +197,9 @@ export default function CheckersPage() {
 
       {/* Main Game Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Game Board Section */}
-        <div className="lg:col-span-3">
+        {/* Left Column - Game Board and Analysis */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Game Board */}
           <CheckersBoard
             position={gameState.position}
             currentPlayer={gameState.currentPlayer}
@@ -210,9 +211,29 @@ export default function CheckersPage() {
             hoveredMove={hoveredMove}
           />
           
+          {/* Evaluation Bar */}
+          <EvaluationBar evaluation={gameState.evaluation} />
+          
+          {/* Analysis Results */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Position Analysis */}
+            <AnalysisResults
+              analysisResult={analysisResult}
+              lastAnalysisTime={lastAnalysisTime}
+              gameState={gameState}
+              isAnalyzing={isAnalyzing}
+            />
+            
+            {/* Engine Lines */}
+            <EngineLines
+              moveEvaluations={analysisResult?.moveEvaluations || []}
+              currentPlayer={gameState.currentPlayer}
+              onMoveHover={setHoveredMove}
+            />
+          </div>
         </div>
 
-        {/* Control Panel Section */}
+        {/* Right Column - Control Panel */}
         <div>
           <ControlPanel
             gameState={gameState}
@@ -226,35 +247,6 @@ export default function CheckersPage() {
             onDepthChange={setAnalysisDepth}
             onRulesChange={handleRulesChange}
           />
-        </div>
-      </div>
-
-      {/* Evaluation Bar - underneath board and controls */}
-      <div className="mt-8">
-        <EvaluationBar evaluation={gameState.evaluation} />
-      </div>
-
-      {/* Analysis Results - underneath evaluation bar */}
-      <div className="mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Position Analysis */}
-          <div>
-            <AnalysisResults
-              analysisResult={analysisResult}
-              lastAnalysisTime={lastAnalysisTime}
-              gameState={gameState}
-              isAnalyzing={isAnalyzing}
-            />
-          </div>
-          
-          {/* Engine Lines */}
-          <div>
-            <EngineLines
-              moveEvaluations={analysisResult?.moveEvaluations || []}
-              currentPlayer={gameState.currentPlayer}
-              onMoveHover={setHoveredMove}
-            />
-          </div>
         </div>
       </div>
 
