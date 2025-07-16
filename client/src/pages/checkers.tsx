@@ -52,29 +52,29 @@ export default function CheckersPage() {
       setGameState(prev => {
         const newPosition = { ...prev.position };
         const piece = newPosition[move.from];
-        
+
         // Move piece
         newPosition[move.to] = piece;
         delete newPosition[move.from];
-        
+
         // Handle captures
         if (move.captures) {
           move.captures.forEach(capturedSquare => {
             delete newPosition[capturedSquare];
           });
         }
-        
+
         // Handle king promotion
         if (move.promotion) {
           if (piece === 'red') newPosition[move.to] = 'red-king';
           if (piece === 'black') newPosition[move.to] = 'black-king';
         }
-        
+
         const moveNotation = `${move.from}-${move.to}${move.captures ? 'x' + move.captures.join('x') : ''}`;
-        
+
         const nextPlayer = prev.currentPlayer === 'red' ? 'black' : 'red';
         const legalMoves = getLegalMoves(newPosition, nextPlayer, gameState.rules);
-        
+
         return {
           ...prev,
           position: newPosition,
@@ -216,10 +216,10 @@ export default function CheckersPage() {
             hoveredMove={hoveredMove}
             boardOrientation={gameState.boardOrientation}
           />
-          
+
           {/* Evaluation Bar */}
           <EvaluationBar evaluation={gameState.evaluation} />
-          
+
           {/* Analysis Results */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Position Analysis */}
@@ -229,7 +229,7 @@ export default function CheckersPage() {
               gameState={gameState}
               isAnalyzing={isAnalyzing}
             />
-            
+
             {/* Engine Lines */}
             <EngineLines
               moveEvaluations={analysisResult?.moveEvaluations || []}
@@ -254,34 +254,6 @@ export default function CheckersPage() {
             onRulesChange={handleRulesChange}
             onOrientationChange={handleOrientationChange}
           />
-        </div>
-      </div>
-
-      {/* Help Section */}
-      <div className="mt-8">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <i className="fas fa-info-circle text-blue-600 mr-2"></i>
-            How to Use
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <div>
-              <div className="font-medium text-gray-900 mb-1">Setup Mode</div>
-              <div className="text-gray-700">Click on empty squares to place pieces. Click on pieces to remove them.</div>
-            </div>
-            <div>
-              <div className="font-medium text-gray-900 mb-1">Play Mode</div>
-              <div className="text-gray-700">Drag pieces to make moves. Only legal moves are allowed.</div>
-            </div>
-            <div>
-              <div className="font-medium text-gray-900 mb-1">Analysis</div>
-              <div className="text-gray-700">Click "Analyze" to see position evaluation and best moves.</div>
-            </div>
-            <div>
-              <div className="font-medium text-gray-900 mb-1">Scoring</div>
-              <div className="text-gray-700">Regular pieces = 1 point, Kings = 2 points. Positive favors Red.</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
