@@ -48,6 +48,7 @@ export type GameState = {
     forceTake: boolean;
     forceMultipleTakes: boolean;
   };
+  boardOrientation: 'normal' | 'inverted';
 };
 
 export type AnalysisResult = {

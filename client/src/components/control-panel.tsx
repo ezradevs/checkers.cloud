@@ -18,6 +18,7 @@ interface ControlPanelProps {
   onModeChange: (mode: 'setup' | 'play') => void;
   onDepthChange: (depth: number) => void;
   onRulesChange: (rules: { forceTake: boolean; forceMultipleTakes: boolean }) => void;
+  onOrientationChange: (orientation: 'normal' | 'inverted') => void;
 }
 
 export function ControlPanel({
@@ -30,7 +31,8 @@ export function ControlPanel({
   onFlip,
   onModeChange,
   onDepthChange,
-  onRulesChange
+  onRulesChange,
+  onOrientationChange
 }: ControlPanelProps) {
   const pieceCounts = countPieces(gameState.position);
 
@@ -189,6 +191,24 @@ export function ControlPanel({
               />
             </div>
           )}
+          
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="board-orientation" className="text-sm font-medium">
+                Invert Board Colors
+              </Label>
+              <div className="text-xs text-gray-500">
+                Swap dark and light squares
+              </div>
+            </div>
+            <Switch
+              id="board-orientation"
+              checked={gameState.boardOrientation === 'inverted'}
+              onCheckedChange={(checked) =>
+                onOrientationChange(checked ? 'inverted' : 'normal')
+              }
+            />
+          </div>
         </div>
       </div>
 

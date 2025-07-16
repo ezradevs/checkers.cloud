@@ -22,6 +22,7 @@ export default function CheckersPage() {
       forceTake: true,
       forceMultipleTakes: true,
     },
+    boardOrientation: 'normal',
   });
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -187,6 +188,10 @@ export default function CheckersPage() {
     });
   }, []);
 
+  const handleOrientationChange = useCallback((orientation: 'normal' | 'inverted') => {
+    setGameState(prev => ({ ...prev, boardOrientation: orientation }));
+  }, []);
+
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       {/* Header */}
@@ -209,6 +214,7 @@ export default function CheckersPage() {
             onPieceMove={handlePieceMove}
             suggestedMove={analysisResult?.bestMove}
             hoveredMove={hoveredMove}
+            boardOrientation={gameState.boardOrientation}
           />
           
           {/* Evaluation Bar */}
@@ -246,6 +252,7 @@ export default function CheckersPage() {
             onModeChange={handleModeChange}
             onDepthChange={setAnalysisDepth}
             onRulesChange={handleRulesChange}
+            onOrientationChange={handleOrientationChange}
           />
         </div>
       </div>

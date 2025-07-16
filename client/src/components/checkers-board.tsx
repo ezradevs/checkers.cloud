@@ -13,6 +13,7 @@ interface CheckersBoardProps {
   onPieceMove: (move: Move) => void;
   suggestedMove?: Move | null;
   hoveredMove?: Move | null;
+  boardOrientation?: 'normal' | 'inverted';
 }
 
 export function CheckersBoard({ 
@@ -23,7 +24,8 @@ export function CheckersBoard({
   onSquareClick, 
   onPieceMove,
   suggestedMove,
-  hoveredMove
+  hoveredMove,
+  boardOrientation = 'normal'
 }: CheckersBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<{ square: string; piece: PieceType } | null>(null);
@@ -158,7 +160,7 @@ export function CheckersBoard({
             {files.map((file) => {
               const square = `${file}${rank}`;
               const piece = position[square];
-              const isDark = isDarkSquare(square);
+              const isDark = isDarkSquare(square, boardOrientation === 'inverted');
               const highlighted = getSquareHighlight(square);
               
               return (

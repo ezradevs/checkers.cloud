@@ -45,9 +45,12 @@ export function isValidSquare(square: string): boolean {
   return row >= 0 && row <= 7 && col >= 0 && col <= 7;
 }
 
-export function isDarkSquare(square: string): boolean {
+export function isDarkSquare(square: string, inverted: boolean = false): boolean {
   const [row, col] = getSquareCoordinates(square);
-  return (row + col) % 2 === 1;
+  // Normal: bottom-left (a1) is dark, so (0+0) % 2 === 0 means light, === 1 means dark
+  // But we want a1 to be dark, so we need to flip the logic
+  const isDark = (row + col) % 2 === 0; // This makes a1 (0,0) dark
+  return inverted ? !isDark : isDark;
 }
 
 export function getLegalMoves(
