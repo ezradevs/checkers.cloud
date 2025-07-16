@@ -209,7 +209,6 @@ export default function CheckersPage() {
             onPieceMove={handlePieceMove}
             suggestedMove={analysisResult?.bestMove}
             hoveredMove={hoveredMove}
-            moveHistory={gameState.moveHistory}
           />
           
           {/* Evaluation Bar */}
