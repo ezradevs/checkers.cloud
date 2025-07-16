@@ -2,18 +2,19 @@ import { useState, useCallback } from 'react';
 import { CheckersBoard } from '@/components/checkers-board';
 import { ControlPanel } from '@/components/control-panel';
 import { AnalysisResults } from '@/components/analysis-results';
-import { getInitialPosition, analyzePosition } from '@/lib/checkers-logic';
+import { getInitialPosition, analyzePosition, getLegalMoves } from '@/lib/checkers-logic';
 import type { GameState, Move, AnalysisResult } from '@shared/schema';
 
 export default function CheckersPage() {
+  const initialPosition = getInitialPosition();
   const [gameState, setGameState] = useState<GameState>({
-    position: getInitialPosition(),
+    position: initialPosition,
     currentPlayer: 'red',
     mode: 'setup',
     evaluation: 0,
     bestMove: null,
     moveHistory: [],
-    legalMoves: [],
+    legalMoves: getLegalMoves(initialPosition, 'red'),
   });
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -61,11 +62,15 @@ export default function CheckersPage() {
         
         const moveNotation = `${move.from}-${move.to}${move.captures ? 'x' + move.captures.join('x') : ''}`;
         
+        const nextPlayer = prev.currentPlayer === 'red' ? 'black' : 'red';
+        const legalMoves = getLegalMoves(newPosition, nextPlayer);
+        
         return {
           ...prev,
           position: newPosition,
-          currentPlayer: prev.currentPlayer === 'red' ? 'black' : 'red',
+          currentPlayer: nextPlayer,
           moveHistory: [...prev.moveHistory, `${prev.moveHistory.length + 1}. ${prev.currentPlayer} ${moveNotation}`],
+          legalMoves,
         };
       });
     }
@@ -91,14 +96,15 @@ export default function CheckersPage() {
   }, [gameState.position, gameState.currentPlayer]);
 
   const handleReset = useCallback(() => {
+    const resetPosition = getInitialPosition();
     setGameState({
-      position: getInitialPosition(),
+      position: resetPosition,
       currentPlayer: 'red',
       mode: gameState.mode,
       evaluation: 0,
       bestMove: null,
       moveHistory: [],
-      legalMoves: [],
+      legalMoves: gameState.mode === 'play' ? getLegalMoves(resetPosition, 'red') : [],
     });
     setAnalysisResult(null);
     setLastAnalysisTime('Never');
@@ -123,7 +129,15 @@ export default function CheckersPage() {
   }, []);
 
   const handleModeChange = useCallback((mode: 'setup' | 'play') => {
-    setGameState(prev => ({ ...prev, mode }));
+    setGameState(prev => {
+      const newState = { ...prev, mode };
+      if (mode === 'play') {
+        // Calculate legal moves when switching to play mode
+        const legalMoves = getLegalMoves(prev.position, prev.currentPlayer);
+        newState.legalMoves = legalMoves;
+      }
+      return newState;
+    });
   }, []);
 
   return (
