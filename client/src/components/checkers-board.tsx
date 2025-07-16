@@ -14,18 +14,20 @@ interface CheckersBoardProps {
   suggestedMove?: Move | null;
   hoveredMove?: Move | null;
   boardOrientation?: 'normal' | 'inverted';
+  colorComplex?: boolean; // false = default, true = opposite
 }
 
-export function CheckersBoard({ 
-  position, 
-  currentPlayer, 
-  mode, 
-  legalMoves, 
-  onSquareClick, 
+export function CheckersBoard({
+  position,
+  currentPlayer,
+  mode,
+  legalMoves,
+  onSquareClick,
   onPieceMove,
   suggestedMove,
   hoveredMove,
-  boardOrientation = 'normal'
+  boardOrientation = 'normal',
+  colorComplex = false
 }: CheckersBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<{ square: string; piece: PieceType } | null>(null);
@@ -38,7 +40,7 @@ export function CheckersBoard({
         const rect = boardRef.current!.getBoundingClientRect();
         setBoardSize(rect.width);
       };
-      
+
       updateBoardSize();
       window.addEventListener('resize', updateBoardSize);
       return () => window.removeEventListener('resize', updateBoardSize);
@@ -56,7 +58,7 @@ export function CheckersBoard({
 
     if (mode === 'play') {
       const piece = position[square];
-      
+
       if (selectedSquare && selectedSquare !== square) {
         // Try to make a move
         const move = legalMoves.find(m => m.from === selectedSquare && m.to === square);
@@ -74,7 +76,7 @@ export function CheckersBoard({
 
   const handleDragStart = useCallback((e: React.DragEvent, square: string) => {
     if (mode !== 'play') return;
-    
+
     const piece = position[square];
     if (piece && isCurrentPlayerPiece(piece, currentPlayer)) {
       setDraggedPiece({ square, piece });
@@ -89,14 +91,14 @@ export function CheckersBoard({
 
   const handleDrop = useCallback((e: React.DragEvent, square: string) => {
     e.preventDefault();
-    
+
     if (!draggedPiece) return;
-    
+
     const move = legalMoves.find(m => m.from === draggedPiece.square && m.to === square);
     if (move) {
       onPieceMove(move);
     }
-    
+
     setDraggedPiece(null);
   }, [draggedPiece, legalMoves, onPieceMove]);
 
@@ -150,19 +152,22 @@ export function CheckersBoard({
           )} />
         </div>
       </div>
-      
-      <div 
+
+      <div
         ref={boardRef}
         className="aspect-square max-w-lg mx-auto border-4 border-gray-800 rounded-lg overflow-hidden relative"
       >
-        {ranks.map((rank) => (
-          <div key={rank} className="flex">
-            {files.map((file) => {
+        {ranks.map((rank, rowIdx) => (
+          <div key={rank} className="flex items-center">
+            {/* Rank number on the left */}
+            <div className="w-5 text-center text-xs md:text-sm text-gray-500 select-none">
+              {rank}
+            </div>
+            {files.map((file, colIdx) => {
               const square = `${file}${rank}`;
               const piece = position[square];
-              const isDark = isDarkSquare(square, boardOrientation === 'inverted');
+              const isDark = isDarkSquare(square, colorComplex);
               const highlighted = getSquareHighlight(square);
-              
               return (
                 <div
                   key={square}
@@ -176,7 +181,6 @@ export function CheckersBoard({
                   onDrop={(e) => handleDrop(e, square)}
                 >
                   {renderPiece(square, piece)}
-                  
                   {/* Legal move indicator */}
                   {isLegalMoveDestination(square) && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -188,7 +192,6 @@ export function CheckersBoard({
             })}
           </div>
         ))}
-        
         {/* Move Arrows Overlay */}
         {suggestedMove && (
           <MoveArrow
@@ -205,10 +208,13 @@ export function CheckersBoard({
           />
         )}
       </div>
-
-      <div className="flex justify-between mt-2 text-xs text-gray-500 max-w-lg mx-auto px-2">
+      {/* File letters below the board */}
+      <div className="flex justify-start mt-1 max-w-lg mx-auto px-2">
+        <div className="w-5" /> {/* Spacer for rank numbers */}
         {files.map(file => (
-          <span key={file}>{file}</span>
+          <div key={file} className="w-12 md:w-16 text-center text-xs md:text-sm text-gray-500 select-none">
+            {file}
+          </div>
         ))}
       </div>
     </div>
@@ -218,5 +224,5 @@ export function CheckersBoard({
 function isCurrentPlayerPiece(piece: PieceType, currentPlayer: 'red' | 'black'): boolean {
   if (!piece) return false;
   return (currentPlayer === 'red' && piece.includes('red')) ||
-         (currentPlayer === 'black' && piece.includes('black'));
+    (currentPlayer === 'black' && piece.includes('black'));
 }

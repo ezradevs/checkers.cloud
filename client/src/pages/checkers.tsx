@@ -4,9 +4,10 @@ import { ControlPanel } from '@/components/control-panel';
 import { AnalysisResults } from '@/components/analysis-results';
 import { EvaluationBar } from '@/components/evaluation-bar';
 import { EngineLines } from '@/components/engine-lines';
-import { getInitialPosition, analyzePosition, getLegalMoves } from '@/lib/checkers-logic';
+import { getInitialPosition, analyzePosition, getLegalMoves, remapPositionToOppositeColorComplex, getLegalMovesWithComplex } from '@/lib/checkers-logic';
 import { findBestMoveWithDepth } from '@/lib/checkers-ai';
 import type { GameState, Move, AnalysisResult } from '@shared/schema';
+import type { BoardPosition } from '@shared/schema';
 
 export default function CheckersPage() {
   const initialPosition = getInitialPosition();
@@ -17,7 +18,7 @@ export default function CheckersPage() {
     evaluation: 0,
     bestMove: null,
     moveHistory: [],
-    legalMoves: getLegalMoves(initialPosition, 'red'),
+    legalMoves: getLegalMovesWithComplex(initialPosition, 'red', false),
     rules: {
       forceTake: true,
       forceMultipleTakes: true,
@@ -30,6 +31,8 @@ export default function CheckersPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisDepth, setAnalysisDepth] = useState(4);
   const [hoveredMove, setHoveredMove] = useState<Move | null>(null);
+  const [colorComplex, setColorComplex] = useState(false); // false = default, true = opposite
+  const [originalPosition, setOriginalPosition] = useState<BoardPosition | null>(null);
 
   const handleSquareClick = useCallback((square: string) => {
     if (gameState.mode === 'setup') {
@@ -42,10 +45,16 @@ export default function CheckersPage() {
           // Place piece based on current player
           newPosition[square] = prev.currentPlayer;
         }
-        return { ...prev, position: newPosition };
+        return {
+          ...prev,
+          position: newPosition,
+          legalMoves: getLegalMovesWithComplex(newPosition, prev.currentPlayer, colorComplex, prev.rules)
+        };
       });
+      return;
     }
-  }, [gameState.mode]);
+    // In play mode, do not update legalMoves here (handled in handlePieceMove)
+  }, [gameState.mode, gameState.currentPlayer, colorComplex, gameState.rules]);
 
   const handlePieceMove = useCallback((move: Move) => {
     if (gameState.mode === 'play') {
@@ -73,7 +82,7 @@ export default function CheckersPage() {
         const moveNotation = `${move.from}-${move.to}${move.captures ? 'x' + move.captures.join('x') : ''}`;
 
         const nextPlayer = prev.currentPlayer === 'red' ? 'black' : 'red';
-        const legalMoves = getLegalMoves(newPosition, nextPlayer, gameState.rules);
+        const legalMoves = getLegalMovesWithComplex(newPosition, nextPlayer, colorComplex, gameState.rules);
 
         return {
           ...prev,
@@ -84,13 +93,13 @@ export default function CheckersPage() {
         };
       });
     }
-  }, [gameState.mode]);
+  }, [gameState.mode, colorComplex, gameState.rules]);
 
   const handleAnalyze = useCallback(async () => {
     setIsAnalyzing(true);
     try {
       // Use the enhanced AI for deeper analysis with current rules
-      const result = findBestMoveWithDepth(gameState.position, gameState.currentPlayer, analysisDepth, gameState.rules);
+      const result = findBestMoveWithDepth(gameState.position, gameState.currentPlayer, analysisDepth, colorComplex, gameState.rules);
       setAnalysisResult(result);
       setGameState(prev => ({
         ...prev,
@@ -102,19 +111,24 @@ export default function CheckersPage() {
     } catch (error) {
       console.error('Analysis failed:', error);
       // Fallback to basic analysis if advanced analysis fails
-      const fallbackResult = analyzePosition(gameState.position, gameState.currentPlayer, gameState.rules);
-      setAnalysisResult(fallbackResult);
+      const fallbackLegalMoves = getLegalMovesWithComplex(gameState.position, gameState.currentPlayer, colorComplex, gameState.rules);
+      setAnalysisResult({
+        evaluation: 0,
+        bestMove: null,
+        legalMoves: fallbackLegalMoves,
+        explanation: 'Analysis failed.'
+      });
       setGameState(prev => ({
         ...prev,
-        evaluation: fallbackResult.evaluation,
-        bestMove: fallbackResult.bestMove ? `${fallbackResult.bestMove.from} → ${fallbackResult.bestMove.to}` : null,
-        legalMoves: fallbackResult.legalMoves,
+        evaluation: 0,
+        bestMove: null,
+        legalMoves: fallbackLegalMoves,
       }));
       setLastAnalysisTime(new Date().toLocaleTimeString() + ' (basic)');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [gameState.position, gameState.currentPlayer, analysisDepth, gameState.rules]);
+  }, [gameState.position, gameState.currentPlayer, analysisDepth, gameState.rules, colorComplex]);
 
   // Auto-evaluate position when it changes (this fixes the timing issue)
   useEffect(() => {
@@ -166,12 +180,12 @@ export default function CheckersPage() {
       const newState = { ...prev, mode };
       if (mode === 'play') {
         // Calculate legal moves when switching to play mode with current rules
-        const legalMoves = getLegalMoves(prev.position, prev.currentPlayer, prev.rules);
+        const legalMoves = getLegalMovesWithComplex(prev.position, prev.currentPlayer, colorComplex, prev.rules);
         newState.legalMoves = legalMoves;
       }
       return newState;
     });
-  }, []);
+  }, [colorComplex]);
 
   const handleDepthChange = useCallback((depth: number) => {
     setAnalysisDepth(depth);
@@ -182,15 +196,34 @@ export default function CheckersPage() {
       const newState = { ...prev, rules };
       // Recalculate legal moves with new rules if in play mode
       if (prev.mode === 'play') {
-        newState.legalMoves = getLegalMoves(prev.position, prev.currentPlayer, rules);
+        newState.legalMoves = getLegalMovesWithComplex(prev.position, prev.currentPlayer, colorComplex, rules);
       }
       return newState;
     });
-  }, []);
+  }, [colorComplex]);
 
-  const handleOrientationChange = useCallback((orientation: 'normal' | 'inverted') => {
-    setGameState(prev => ({ ...prev, boardOrientation: orientation }));
-  }, []);
+  const handleColorComplexToggle = useCallback(() => {
+    setColorComplex(prev => {
+      if (!prev) {
+        // Going to opposite complex: store original position and remap
+        setOriginalPosition(gameState.position);
+        setGameState(prevState => ({
+          ...prevState,
+          position: remapPositionToOppositeColorComplex(prevState.position),
+          legalMoves: getLegalMovesWithComplex(remapPositionToOppositeColorComplex(prevState.position), prevState.currentPlayer, true, prevState.rules)
+        }));
+        return true;
+      } else {
+        // Going back to default: restore original position
+        setGameState(prevState => ({
+          ...prevState,
+          position: originalPosition || prevState.position,
+          legalMoves: getLegalMovesWithComplex(originalPosition || prevState.position, prevState.currentPlayer, false, prevState.rules)
+        }));
+        return false;
+      }
+    });
+  }, [gameState.position, gameState.currentPlayer, gameState.rules, originalPosition]);
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
@@ -214,7 +247,7 @@ export default function CheckersPage() {
             onPieceMove={handlePieceMove}
             suggestedMove={analysisResult?.bestMove}
             hoveredMove={hoveredMove}
-            boardOrientation={gameState.boardOrientation}
+            colorComplex={colorComplex}
           />
 
           {/* Evaluation Bar */}
@@ -252,7 +285,8 @@ export default function CheckersPage() {
             onModeChange={handleModeChange}
             onDepthChange={setAnalysisDepth}
             onRulesChange={handleRulesChange}
-            onOrientationChange={handleOrientationChange}
+            colorComplex={colorComplex}
+            onColorComplexToggle={handleColorComplexToggle}
           />
         </div>
       </div>

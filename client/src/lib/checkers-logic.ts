@@ -45,12 +45,32 @@ export function isValidSquare(square: string): boolean {
   return row >= 0 && row <= 7 && col >= 0 && col <= 7;
 }
 
-export function isDarkSquare(square: string, inverted: boolean = false): boolean {
+/**
+ * Remap a BoardPosition to the opposite color complex.
+ * Shifts all pieces by one column, wrapping around, and only to valid dark squares in the new complex.
+ * Used when toggling the color complex (dark squares shift by one).
+ */
+export function remapPositionToOppositeColorComplex(position: BoardPosition): BoardPosition {
+  const newPosition: BoardPosition = {};
+  for (const [square, piece] of Object.entries(position)) {
+    const [row, col] = getSquareCoordinates(square);
+    // Shift column by +1 (wrap around 0-7)
+    const newCol = (col + 1) % 8;
+    const newSquare = getSquareFromCoordinates(row, newCol);
+    // Only place on valid dark squares in the new complex
+    if (isDarkSquare(newSquare, true)) { // true = opposite complex
+      newPosition[newSquare] = piece;
+    }
+  }
+  return newPosition;
+}
+
+// Update isDarkSquare to accept a colorComplex argument
+export function isDarkSquare(square: string, colorComplex: boolean = false): boolean {
   const [row, col] = getSquareCoordinates(square);
-  // Normal: bottom-left (a1) is dark, so (0+0) % 2 === 0 means light, === 1 means dark
-  // But we want a1 to be dark, so we need to flip the logic
-  const isDark = (row + col) % 2 === 0; // This makes a1 (0,0) dark
-  return inverted ? !isDark : isDark;
+  // colorComplex=false: bottom-left (a1) is dark, (row+col)%2===0 is dark
+  // colorComplex=true: bottom-left (a1) is light, so (row+col)%2===1 is dark
+  return colorComplex ? (row + col) % 2 === 1 : (row + col) % 2 === 0;
 }
 
 export function getLegalMoves(
@@ -292,4 +312,107 @@ export function countPieces(position: BoardPosition): { red: number; redKings: n
   });
 
   return counts;
+}
+
+// New: getLegalMovesWithComplex
+export function getLegalMovesWithComplex(
+  position: BoardPosition,
+  player: 'red' | 'black',
+  colorComplex: boolean,
+  rules: { forceTake: boolean; forceMultipleTakes: boolean } = { forceTake: true, forceMultipleTakes: true }
+): Move[] {
+  const moves: Move[] = [];
+  Object.entries(position).forEach(([square, piece]) => {
+    if (!piece) return;
+    const isPlayerPiece = (player === 'red' && (piece === 'red' || piece === 'red-king')) ||
+      (player === 'black' && (piece === 'black' || piece === 'black-king'));
+    if (!isPlayerPiece) return;
+    const pieceMoves = getPieceMovesAndCapturesWithComplex(position, square, piece, colorComplex);
+    moves.push(...pieceMoves);
+  });
+  const captureMoves = moves.filter(move => move.captures && move.captures.length > 0);
+  if (rules.forceTake && captureMoves.length > 0) {
+    if (rules.forceMultipleTakes) {
+      const maxCaptures = Math.max(...captureMoves.map(move => move.captures?.length || 0));
+      return captureMoves.filter(move => (move.captures?.length || 0) === maxCaptures);
+    }
+    return captureMoves;
+  }
+  return moves;
+}
+
+function getPieceMovesAndCapturesWithComplex(position: BoardPosition, square: string, piece: PieceType, colorComplex: boolean): Move[] {
+  if (!piece) return [];
+  const [row, col] = getSquareCoordinates(square);
+  const moves: Move[] = [];
+  const isKing = piece.includes('king');
+  const isRed = piece.includes('red');
+  const directions = isKing ? [-1, 1] : [isRed ? 1 : -1];
+  directions.forEach(rowDir => {
+    [-1, 1].forEach(colDir => {
+      const newRow = row + rowDir;
+      const newCol = col + colDir;
+      const newSquare = getSquareFromCoordinates(newRow, newCol);
+      if (isValidSquare(newSquare) && isDarkSquare(newSquare, colorComplex) && !position[newSquare]) {
+        const promotion = shouldPromote(piece, newSquare);
+        moves.push({ from: square, to: newSquare, promotion });
+      }
+      const captureRow = row + rowDir * 2;
+      const captureCol = col + colDir * 2;
+      const captureSquare = getSquareFromCoordinates(captureRow, captureCol);
+      const jumpedSquare = getSquareFromCoordinates(row + rowDir, col + colDir);
+      if (
+        isValidSquare(captureSquare) &&
+        isDarkSquare(captureSquare, colorComplex) &&
+        !position[captureSquare] && position[jumpedSquare] &&
+        isOpponentPiece(piece, position[jumpedSquare])
+      ) {
+        const promotion = shouldPromote(piece, captureSquare);
+        const move: Move = {
+          from: square,
+          to: captureSquare,
+          captures: [jumpedSquare],
+          promotion
+        };
+        const multiJumpMoves = findMultipleJumpsWithComplex(position, move, piece, colorComplex);
+        moves.push(...multiJumpMoves);
+      }
+    });
+  });
+  return moves;
+}
+
+function findMultipleJumpsWithComplex(position: BoardPosition, initialMove: Move, piece: PieceType, colorComplex: boolean): Move[] {
+  const tempPosition = { ...position };
+  tempPosition[initialMove.to] = piece;
+  delete tempPosition[initialMove.from];
+  if (initialMove.captures) {
+    initialMove.captures.forEach(square => delete tempPosition[square]);
+  }
+  const additionalJumps = getPieceMovesAndCapturesWithComplex(tempPosition, initialMove.to, piece, colorComplex)
+    .filter(move => move.captures && move.captures.length > 0);
+  if (additionalJumps.length === 0) {
+    return [initialMove];
+  }
+  const allMultiJumps: Move[] = [];
+  additionalJumps.forEach(jump => {
+    const extendedMove: Move = {
+      from: initialMove.from,
+      to: jump.to,
+      captures: [...(initialMove.captures || []), ...(jump.captures || [])],
+      promotion: jump.promotion || initialMove.promotion
+    };
+    const furtherJumps = findMultipleJumpsWithComplex(tempPosition,
+      { from: initialMove.to, to: jump.to, captures: jump.captures, promotion: jump.promotion },
+      piece, colorComplex);
+    furtherJumps.forEach(furtherJump => {
+      allMultiJumps.push({
+        from: initialMove.from,
+        to: furtherJump.to,
+        captures: [...(initialMove.captures || []), ...(furtherJump.captures || [])],
+        promotion: furtherJump.promotion || initialMove.promotion
+      });
+    });
+  });
+  return allMultiJumps.length > 0 ? allMultiJumps : [initialMove];
 }
