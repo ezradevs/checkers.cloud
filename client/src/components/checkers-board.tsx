@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { BoardPosition, PieceType, Move } from '@shared/schema';
 import { isDarkSquare, getSquareCoordinates } from '@/lib/checkers-logic';
+import { MoveArrow } from './move-arrow';
 
 interface CheckersBoardProps {
   position: BoardPosition;
@@ -10,6 +11,8 @@ interface CheckersBoardProps {
   legalMoves: Move[];
   onSquareClick: (square: string) => void;
   onPieceMove: (move: Move) => void;
+  suggestedMove?: Move | null;
+  hoveredMove?: Move | null;
 }
 
 export function CheckersBoard({ 
@@ -18,10 +21,27 @@ export function CheckersBoard({
   mode, 
   legalMoves, 
   onSquareClick, 
-  onPieceMove 
+  onPieceMove,
+  suggestedMove,
+  hoveredMove
 }: CheckersBoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [draggedPiece, setDraggedPiece] = useState<{ square: string; piece: PieceType } | null>(null);
+  const [boardSize, setBoardSize] = useState(400);
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (boardRef.current) {
+      const updateBoardSize = () => {
+        const rect = boardRef.current!.getBoundingClientRect();
+        setBoardSize(rect.width);
+      };
+      
+      updateBoardSize();
+      window.addEventListener('resize', updateBoardSize);
+      return () => window.removeEventListener('resize', updateBoardSize);
+    }
+  }, []);
 
   const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const ranks = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -78,10 +98,16 @@ export function CheckersBoard({
     setDraggedPiece(null);
   }, [draggedPiece, legalMoves, onPieceMove]);
 
-  const isHighlighted = useCallback((square: string) => {
-    if (!selectedSquare) return false;
-    return legalMoves.some(move => move.from === selectedSquare && move.to === square);
-  }, [selectedSquare, legalMoves]);
+  const getSquareHighlight = useCallback((square: string) => {
+    if (selectedSquare === square) return 'ring-4 ring-blue-400 ring-opacity-75';
+    if (suggestedMove?.from === square) return 'ring-3 ring-purple-500 ring-opacity-75';
+    if (suggestedMove?.to === square) return 'ring-3 ring-purple-500 ring-opacity-75';
+    if (hoveredMove?.from === square) return 'ring-2 ring-orange-400 ring-opacity-60';
+    if (hoveredMove?.to === square) return 'ring-2 ring-orange-400 ring-opacity-60';
+    if (legalMoves.some(move => move.to === square)) return 'ring-2 ring-green-400 ring-opacity-50';
+    if (legalMoves.some(move => move.from === square)) return 'ring-2 ring-yellow-400 ring-opacity-50';
+    return '';
+  }, [selectedSquare, suggestedMove, hoveredMove, legalMoves]);
 
   const renderPiece = (square: string, piece: PieceType) => {
     if (!piece) return null;
@@ -125,14 +151,17 @@ export function CheckersBoard({
         </div>
       </div>
       
-      <div className="aspect-square max-w-lg mx-auto border-4 border-gray-800 rounded-lg overflow-hidden">
+      <div 
+        ref={boardRef}
+        className="aspect-square max-w-lg mx-auto border-4 border-gray-800 rounded-lg overflow-hidden relative"
+      >
         {ranks.map((rank) => (
           <div key={rank} className="flex">
             {files.map((file) => {
               const square = `${file}${rank}`;
               const piece = position[square];
               const isDark = isDarkSquare(square);
-              const highlighted = isHighlighted(square);
+              const highlighted = getSquareHighlight(square);
               
               return (
                 <div
@@ -140,7 +169,7 @@ export function CheckersBoard({
                   className={cn(
                     "w-12 h-12 md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:bg-opacity-80 transition-colors relative",
                     isDark ? "bg-gray-400" : "bg-gray-100",
-                    highlighted && "ring-2 ring-blue-500 ring-inset",
+                    highlighted,
                     selectedSquare === square && "bg-blue-200"
                   )}
                   onClick={() => handleSquareClick(square)}
@@ -153,6 +182,22 @@ export function CheckersBoard({
             })}
           </div>
         ))}
+        
+        {/* Move Arrows Overlay */}
+        {suggestedMove && (
+          <MoveArrow
+            move={suggestedMove}
+            boardSize={boardSize}
+            color="suggested"
+          />
+        )}
+        {hoveredMove && hoveredMove !== suggestedMove && (
+          <MoveArrow
+            move={hoveredMove}
+            boardSize={boardSize}
+            color="hovered"
+          />
+        )}
       </div>
 
       <div className="flex justify-between mt-2 text-xs text-gray-500 max-w-lg mx-auto px-2">

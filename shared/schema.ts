@@ -57,4 +57,5 @@ export type AnalysisResult = {
   explanation: string;
   analysisTime?: number;
   nodesEvaluated?: number;
+  moveEvaluations?: Array<{ move: Move; score: number; rank: number }>;
 };

@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { CheckersBoard } from '@/components/checkers-board';
 import { ControlPanel } from '@/components/control-panel';
 import { AnalysisResults } from '@/components/analysis-results';
+import { EvaluationBar } from '@/components/evaluation-bar';
+import { EngineLines } from '@/components/engine-lines';
 import { getInitialPosition, analyzePosition, getLegalMoves } from '@/lib/checkers-logic';
 import { findBestMoveWithDepth } from '@/lib/checkers-ai';
 import type { GameState, Move, AnalysisResult } from '@shared/schema';
@@ -26,6 +28,7 @@ export default function CheckersPage() {
   const [lastAnalysisTime, setLastAnalysisTime] = useState<string>('Never');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisDepth, setAnalysisDepth] = useState(4);
+  const [hoveredMove, setHoveredMove] = useState<Move | null>(null);
 
   const handleSquareClick = useCallback((square: string) => {
     if (gameState.mode === 'setup') {
@@ -203,6 +206,8 @@ export default function CheckersPage() {
             legalMoves={gameState.legalMoves}
             onSquareClick={handleSquareClick}
             onPieceMove={handlePieceMove}
+            suggestedMove={analysisResult?.bestMove}
+            hoveredMove={hoveredMove}
           />
         </div>
 
@@ -223,14 +228,27 @@ export default function CheckersPage() {
         </div>
       </div>
 
-      {/* Analysis Results */}
-      <div className="mt-8">
-        <AnalysisResults
-          analysisResult={analysisResult}
-          lastAnalysisTime={lastAnalysisTime}
-          gameState={gameState}
-          isAnalyzing={isAnalyzing}
-        />
+      {/* Analysis Dashboard */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Evaluation & Analysis */}
+        <div className="space-y-6">
+          <EvaluationBar evaluation={gameState.evaluation} />
+          <AnalysisResults
+            analysisResult={analysisResult}
+            lastAnalysisTime={lastAnalysisTime}
+            gameState={gameState}
+            isAnalyzing={isAnalyzing}
+          />
+        </div>
+        
+        {/* Right Column - Engine Lines */}
+        <div>
+          <EngineLines
+            moveEvaluations={analysisResult?.moveEvaluations || []}
+            currentPlayer={gameState.currentPlayer}
+            onMoveHover={setHoveredMove}
+          />
+        </div>
       </div>
 
       {/* Help Section */}

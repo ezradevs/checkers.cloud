@@ -205,11 +205,17 @@ export function findBestMoveWithDepth(
   
   const explanation = getAdvancedMoveExplanation(bestMove, evaluation, bestScore, moveEvaluations, position);
   
+  // Add ranking to move evaluations
+  const rankedEvaluations = moveEvaluations
+    .sort((a, b) => player === 'red' ? b.score - a.score : a.score - b.score)
+    .map((evaluation, index) => ({ ...evaluation, rank: index + 1 }));
+  
   return {
     evaluation,
     bestMove,
     legalMoves,
-    explanation
+    explanation,
+    moveEvaluations: rankedEvaluations
   };
 }
 
