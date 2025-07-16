@@ -33,11 +33,11 @@ export function MoveArrow({ move, boardSize, color = 'suggested', className }: M
     const arrowHeadWidth = squareSize * 0.1;
     const arrowBodyWidth = squareSize * 0.06;
     
-    // Adjust start point to edge of piece circle, end point to center of destination square
-    const pieceRadius = squareSize * 0.35; // Edge of piece
+    // Start from edge of piece circle, end at center of destination square
+    const pieceRadius = squareSize * 0.25; // Actual piece radius (half of piece size)
     const adjustedFromX = fromX + (pieceRadius * Math.cos(angle));
     const adjustedFromY = fromY + (pieceRadius * Math.sin(angle));
-    const adjustedToX = toX; // Go to center of destination square
+    const adjustedToX = toX; // Exact center of destination square
     const adjustedToY = toY;
     
     // Calculate arrow head points

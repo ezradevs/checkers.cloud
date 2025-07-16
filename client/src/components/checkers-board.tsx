@@ -99,7 +99,7 @@ export function CheckersBoard({
   }, [draggedPiece, legalMoves, onPieceMove]);
 
   const getSquareHighlight = useCallback((square: string) => {
-    if (selectedSquare === square) return 'ring-4 ring-blue-400 ring-opacity-75';
+    // No square highlighting - only piece highlighting
     return '';
   }, [selectedSquare]);
 
@@ -121,7 +121,6 @@ export function CheckersBoard({
         className={cn(
           "w-8 h-8 md:w-12 md:h-12 rounded-full border-2 shadow-lg cursor-grab hover:scale-105 transition-transform flex items-center justify-center",
           isRed ? "bg-red-500 border-red-700" : "bg-gray-800 border-gray-900",
-          isSelected && "ring-4 ring-blue-400",
           isDragging && "opacity-50"
         )}
         draggable={mode === 'play' && isCurrentPlayerPiece(piece, currentPlayer)}
